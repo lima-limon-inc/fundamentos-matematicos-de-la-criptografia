@@ -1,7 +1,7 @@
 .PHONY: encrypt
 encrypt:
-	gpg --batch --passphrase-file resumen.pass --symmetric resumen.tex
-	gpg --batch --passphrase-file resumen.pass --symmetric resumen.pdf
+	gpg --batch --yes --passphrase-file resumen.pass --symmetric resumen.tex
+	gpg --batch --yes --passphrase-file resumen.pass --symmetric resumen.pdf
 
 .PHONY: decrypt
 decrypt:
