@@ -10,4 +10,4 @@ decrypt:
 
 .PHONY: build
 build:
-	pdflatex resumen.tex
+	pdflatex -synctex=1 resumen.tex
