@@ -5,8 +5,8 @@ encrypt:
 
 .PHONY: decrypt
 decrypt:
-	gpg -o resumen.tex -d resumen.tex.gpg
-	gpg -o resumen.pdf -d resumen.pdf.gpg
+	gpg --yes -o resumen.tex -d resumen.tex.gpg
+	gpg --yes -o resumen.pdf -d resumen.pdf.gpg
 
 .PHONY: build
 build:
