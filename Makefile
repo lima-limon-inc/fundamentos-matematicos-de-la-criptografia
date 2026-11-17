@@ -1,16 +1,16 @@
-.PHONY: encrypt
-encrypt:
-	gpg --batch --yes --passphrase-file resumen.pass --symmetric resumen.tex
-	gpg --batch --yes --passphrase-file resumen.pass --symmetric resumen.pdf
+# .PHONY: encrypt
+# encrypt:
+# 	gpg --batch --yes --passphrase-file resumen.pass --symmetric resumen.tex
+# 	gpg --batch --yes --passphrase-file resumen.pass --symmetric resumen.pdf
 
-.PHONY: decrypt
-decrypt:
-	gpg --yes -o resumen.tex -d resumen.tex.gpg
-	gpg --yes -o resumen.pdf -d resumen.pdf.gpg
+# .PHONY: decrypt
+# decrypt:
+# 	gpg --yes -o resumen.tex -d resumen.tex.gpg
+# 	gpg --yes -o resumen.pdf -d resumen.pdf.gpg
 
 .PHONY: build
 build:
-	pdflatex -synctex=1 resumen.tex
-	bibtex resumen
-	pdflatex -synctex=1 resumen.tex
-	pdflatex -synctex=1 resumen.tex
+	pdflatex -synctex=1 fm-criptografia-resumen-fabri.tex
+	bibtex fm-criptografia-resumen-fabri
+	pdflatex -synctex=1 fm-criptografia-resumen-fabri.tex
+	pdflatex -synctex=1 fm-criptografia-resumen-fabri.tex
