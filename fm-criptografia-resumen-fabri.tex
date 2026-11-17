@@ -1176,9 +1176,54 @@ Si $f$ en $F_2[X]$ es \textbf{irreducible}, todo estado inicial tiene el \textit
 
 La respuesta nos lo dan los cuerpos de Galois. $F_q$ siendo $q = 2^n$ y siendo $U(F_q)$ son sus unidades. Se da lo siguiente (ojo):
 \begin{enumerate}
-\item{$U(F_q)$ es un grupo cíclico de $q-1$ elementos.}
-\item{$F_q \equiv F$}
+  \item $U(\mathbb{F}_q)$ es un grupo cíclico de $q-1$ elementos.
+
+  \item $\mathbb{F}_q \cong \mathbb{F}_2[X]/(f)$, con $f \in \mathbb{F}_2[X]$, siempre y cuando $f$ sea irreducible de grado $n$ (con $q = 2^n$).
+
+  \item $\mathbb{F}_q$ es el cuerpo de descomposición de $X^q - X$.
+
+  \item Como $U(\mathbb{F}_q) \cong \mathbb{Z}/(q-1)\mathbb{Z}$, tiene $\varphi(q-1)$ generadores.
+
+  \item Los generadores de $U(\mathbb{F}_q)$ se llaman \textbf{``Elementos primitivos''} y hay $\varphi(q-1)$.
+
+  \item Los polinomios de grado $n$ que se anulan en elementos primitivos se llaman \textbf{``Polinomios primitivos''} y hay $\dfrac{\varphi(q-1)}{n}$.
+
+  \item Hay tablas de polinomios primitivos en $\mathbb{F}_2[X]$ que tienen pocos XOR (computacionalmente ``livianos'').
 \end{enumerate}
+
+\subsection{LFSR de polinomios primitivos}
+El LFSR asociado a un $f \in F_2[X]$ con grado $n$ tiene un periodo de $2^n-1$ si y solo si $f$ es un polinomio primitivo.
+
+Una propiedad muy interesante y piola es que \textbf{primitivo implica irreducible}.
+Esto responde la pregunta que haciamos antes: \textbf{solo necesitas un polinomio primitivo}. Entonces ahora ya sabemos como hacer circuitos piolas,  entendiendo por piola:
+
+\begin{itemize}
+\item Todos los $S_n$ tienen el mismo periodo
+\item Dicho periodo es el maximo de $2^n -1$ siendo $n$ el grado del polinomio
+\end{itemize}
+
+\subsection{LFSR de PPI}
+
+El problema que tienen los LFSR de PPP\footnote{PPI significa polinomio primitivo irreducible} es que son lineales: dada una cantidad larga de
+ouput uno puede obtener la seed original.
+
+En este contexto, la ``seed'' del LFSR es el estado inicial que se le entrega al
+circuito (los primeros ``$n$'' bits que mandamos). Es por esto que todas las
+implementaciones de LFSR tratan de introducir algún tipo de no linealidad
+(\nameref{sec:a51}, \nameref{sec:trivium}, \nameref{sec:chacha},
+\nameref{sec:salsa20}).
+
+\section{A5/1}
+\label{sec:a51}
+
+\section{Trivium}
+\label{sec:trivium}
+
+\section{Cha-cha}
+\label{sec:chacha}
+
+\section{Salsa 20}
+\label{sec:salsa20}
 
 \appendix
 \chapter{Practicas}
@@ -1359,7 +1404,6 @@ $$
 1 &= 2 \cdot 3 - 5 \\
 \end{aligned}
 $$
-
 El inverso de $3 \modulo{5}$ es 2! Chequeo: $ 2 \cdot 3 = 6 \rarrow 6 - 5 = 1$.
 
 Con esto, multiplicamos ambos lados por 2.
