@@ -14,3 +14,14 @@ build:
 	bibtex fm-criptografia-resumen-fabri
 	pdflatex -synctex=1 fm-criptografia-resumen-fabri.tex
 	pdflatex -synctex=1 fm-criptografia-resumen-fabri.tex
+
+.PHONY: clean
+clean:
+	rm -f *.aux
+	rm -f *.bbl
+	rm -f *.blg
+	rm -f *.log
+	rm -f *.out
+	rm -f *.synctex*
+	rm -f *.toc
+

@@ -1215,15 +1215,226 @@ implementaciones de LFSR tratan de introducir algún tipo de no linealidad
 
 \section{A5/1}
 \label{sec:a51}
+Consiste de 3 LFSR conectados para generar la no linealidad. Estos vienen de los siguientes 3 polinomios
+
+$$
+\begin{aligned}
+  &x^{19} + x^{18} + x^{17} + x^{14} + 1\\
+  &x^{22} + x^{21} + 1\\
+  &x^{23} + x^{22} + x^{21} + x^{8} + 1\\
+\end{aligned}
+$$
+
+Y tiene el siguiente circuito asociado:
+\begin{center}
+\begin{circuitikz}
+  % Cajitas
+  \node[draw, rectangle, minimum width=2cm, minimum height=0.5cm, label=above:\textcolor{red}{9}] (19) at (0,2.5) {19 FFs};
+  \node[draw, rectangle, minimum width=2cm, minimum height=0.5cm, label=above:\textcolor{red}{11}] (22) at (0,1) {22 FFs};
+  \node[draw, rectangle, minimum width=2cm, minimum height=0.5cm, label=above:\textcolor{red}{11}] (23) at (0,-0.5) {23 FFs};
+
+  % Xors
+  \node[draw] (xor) at ($(22) + (3,0)$) {$\oplus$};
+
+  % Cables
+  \draw (22.east) to (xor.west);
+  \draw (19.east) -- ++(2,0) |- (xor.north);
+  \draw (23.east) -- ++(2,0) |- (xor.south);
+
+  % Cable respuesta
+  \draw[->] (xor.east) to ($(xor) + (2,0)$);
+\end{circuitikz}
+\end{center}
+
+El mecanismo se inicia configurando los 3 LFSR a su estado inicial correspondiente:
+\begin{enumerate}
+\item Se cargan los 3 LFSR con una llave de 64 bits
+\item Se carga un nonce de 22 bits
+\item Se hace correr 100 ciclos del circuito usando el mecanismo de ``avance de reloj por mayoria'' que se explica a continuacion
+\end{enumerate}
+
+Luego, durante la corrida del circuito entra en juego el proceso de ``avance de reloj por mayoria''\footnote{En clase vimos a este fenomeno con el termino de ``votación''. No soy muy fan de ese termino en este contexto, lo asocio mas a la votacion en algoritmos distribuidos donde la votacion tiene otro significado.}. Cada uno de los LFSR tiene una ``posicion especial'' (9na, 11ava y 11ava respectivamente). En cada tick del reloj global, se hace una ``decision'' para determinar cuales de los LFSR van a avanzar su estado interno. Para esto se toma el valor en cada una de las ``posiciones especiales'' de los 3 LFSR y se chequea qué número es el que está presente en la mayoria de las ``posiciones especiales'' (como los valores son 0 o 1 y hay 3 LFSR, \textit{siempre} nunca va a haber empates). Este proceso de ``decision'' es el que le dá la no linealidad al algoritmo.
+
+Este mecanismo tenia varios problemas desde el punto de la poblacion:
+\begin{itemize}
+\item 64 bits no eran demasiados. Esto facilitaba que el proceso fuese explotado para espiar las comunicaciones\footnote{Segun el gobierno de EEUU, esto era un tremendo feature.}
+\item De los 64 bits de llave, solo se usaban 52, el resto se dejaban en 0 (esto tambien se hacia para ser mas facil el espionaje).
+\item El diseño del circuito fue un secreto de estado
+\item Despues salió el A5/2 pero era mas inseguro todavia
+\end{itemize}
 
 \section{Trivium}
 \label{sec:trivium}
 
-\section{Cha-cha}
-\label{sec:chacha}
-
 \section{Salsa 20}
 \label{sec:salsa20}
+Es un stream cipher optimizado para el software. \footnote{El paper original de Salsa20 \cite{salsa2005} son 9 paginas y está lindo. No es engorroso.}
+
+\subsection{Quarterround}
+La operación principal del Salsa20 es el ``quarteround''. Consiste de una transformar 4 palabras de 32 bits.
+
+$$
+\begin{aligned}
+b &= b \oplus (( a + b \mod 32) <<< 7) \\
+c &= c \oplus (( b + a \mod 32) <<< 9) \\
+d &= d \oplus (( c + b \mod 32) <<< 13) \\
+a &= a \oplus (( c + d \mod 32) <<< 18) \\
+\end{aligned}
+$$
+
+\subsection{Matriz de palabras}
+Definimos la matriz $X$ como:
+$$
+X = \begin{bmatrix}
+   X0 & X1 & X2 & X3 \\
+   X4 & X5 & X6 & X7 \\
+   X8 & X9 & X10 & X11 \\
+   X12 & X13 & X14 & X15 \\
+    \end{bmatrix}
+$$
+
+La matriz $X$ es de $4$ x $4$ y tiene 16 elementos en total.
+
+\subsection{Row Round}
+\label{sec:rowround}
+Se define la matriz ``Row Round'' como:
+
+$$
+RR(X) = \begin{bmatrix}
+  QR(X0, & X1, & X2, & X3 << 0)\\
+  QR(X4, & X5, & X6, & X7 << 1)\\
+  QR(X8, & X9, & X10, & X11 << 2)\\
+  QR(X12, & X13, & X14, & X15 << 3)\\
+\end{bmatrix} =
+\begin{bmatrix}
+   Y0  & Y1  & Y2  & Y3 \\
+   Y5  & Y6  & Y7  & Y4 \\
+   Y10 & Y11 & Y8  & Y9 \\
+   Y15 & Y12 & Y13 & Y14 \\
+    \end{bmatrix}
+$$
+
+Es decir, agarra cada fila y le aplica un ``shift progresivo'' que arranca en 0, es decir, la 0ava fila no se shiftea, la 1ra se le shiftea el primer elemento al final, la segunda los primeros dos elementos se shiftean al final y la tercera los primeros tres.
+Cada operación de $QR$ se puede aplicar en paralelo.
+
+\subsection{Column Round}
+\label{sec:columnround}
+Se define la matriz ``Column Round'' como la version de ``columnas'' de ``Row round''.
+$$
+CR(X) = RR(X^t)
+$$
+
+Para referencia, $X^t$ se ve:
+$$
+X^t = \begin{bmatrix}
+   X0 & X4 & X8 & X12 \\
+   X1 & X5 & X9 & X13 \\
+   X2 & X6 & X10 & X14 \\
+   X3 & X7 & X11 & X15 \\
+    \end{bmatrix}
+$$
+
+Desarrollado $CR$ queda:
+$$
+CR(X) = \begin{bmatrix}
+  QR(X0, & X4, & X8, & X12 << 0)\\
+  QR(X1, & X5, & X9, & X13 << 1)\\
+  QR(X2, & X6, & X10, & X14 << 2)\\
+  QR(X3, & X7, & X11, & X15 << 3)\\
+\end{bmatrix} =
+\begin{bmatrix}
+   Y0  & Y4  & Y8  & Y12 \\
+   Y5  & Y9  & Y13  & Y1  \\
+   Y10 & Y14 & Y2  & Y6 \\
+   Y15 & Y3 & Y7 & Y11 \\
+    \end{bmatrix}
+$$
+
+\subsection{Double Round}
+El Double Round se define como $DR(X) = RR(CR(X))$. Es decir, un Column Round seguido de un Row Round.
+$$
+\begin{aligned}
+CR(X) &= \begin{bmatrix}
+QR(X0, & X4, & X8, & X12 << 0)\\
+QR(X1, & X5, & X9, & X13 << 1)\\
+QR(X2, & X6, & X10, & X14 << 2)\\
+QR(X3, & X7, & X11, & X15 << 3)\\
+\end{bmatrix} =
+\begin{bmatrix}
+Y0  & Y4  & Y8  & Y12 \\
+Y5  & Y9  & Y13  & Y1  \\
+Y10 & Y14 & Y2  & Y6 \\
+Y15 & Y3 & Y7 & Y11 \\
+\end{bmatrix} \\
+RR(Y) &= \begin{bmatrix}
+QR(Y0, & Y4, & Y8,  & Y12 << 0)\\
+QR(Y5, & Y9, & Y13, & Y1<< 1)\\
+QR(Y10, & Y14, & Y2, & Y6 << 2)\\
+QR(Y15, & Y3, & Y7, & Y11 << 3)\\
+\end{bmatrix} =
+\begin{bmatrix}
+Z0  & Z4  & Z8  & Z12 \\
+Z9  & Z13  & Z1 & Z5 \\
+Z2  & Z6  & Z10 & Z14 \\
+Z11 & Z15 & Z3  & Z7  \\
+\end{bmatrix}\\
+DR(X) &= 
+\begin{bmatrix}
+Z0  & Z4  & Z8  & Z12 \\
+Z9  & Z13  & Z1 & Z5 \\
+Z2  & Z6  & Z10 & Z14 \\
+Z11 & Z15 & Z3  & Z7  \\
+\end{bmatrix}
+\end{aligned}
+$$
+
+\subsection{Salsa20 propiamente dicho}
+Finalmente, tenemos que ``Salsa20'' se define como la operación ``DoubleRound'' 10 veces (de ahí el nombre, 10 veces double round = 20).
+
+$$
+\text{Salsa20}(X) = DR(DR(DR(DR(DR(DR(DR(DR(DR(DR(X)))))))))) \; \footnote{Lisp could never}
+$$
+
+\subsection{Key stream}
+
+El key stream de Salsa20 se genera
+
+\section{ChaCha}
+\label{sec:chacha}
+
+\paragraph{Nota sobre ChaCha} No lo vimos en clase, pongo este mini resumen por ``completitud'' y por ``amor al arte'' y porque ``no quiero estudiar fisica''. \\
+
+
+Es una variante de \nameref{sec:salsa20}. El funcionamiento es igual que el de Salsa solo que con algunas diferencias \footnote{Este funcionamiento lo saqué del paper original de ChaCha \cite{chacha2007}. Recomiendo el paper bastante, son 6 paginas nomas, super claro y solo te cuenta las diferencias. Muy piola.}.
+
+\subsection{Quarterround}
+ChaCha cambia el quarter round de Salsa20 con el objectivo difundir los bits en menos ciclos.
+
+$$
+\begin{aligned}
+  a &= a + b \mod 32\\
+  d &= (d \oplus a) <<< 16\\
+  c &= c + d \mod 32\\
+  b &= (b \oplus c) <<< 12\\
+  a &= a + b \mod 32\\
+  d &= (d \oplus a) <<< 8\\
+  c &= c + d \mod 32\\
+  b &= (b \oplus c) <<< 7\\
+\end{aligned}
+$$
+
+
+
+Lo mas a notar es que:
+\begin{itemize}
+\item Tiene la misma cantidad de operaciones que Salsa20 \footnote{Son mas renglones por como lo anoté, pero son en ambos 4 sumas, 4 xors y 4 shifts} (Importante)
+\item Cada palabra se actualiza dos veces por quarterround (fijate que $a$ se suma dos veces, $d$ se ``xorea'' dos veces, etc). (Importante)
+\item Usa un registro menos, es todo in place no tiene sumas intermedias (Medio/Interesante)
+\item También cambian los numeros por los que se shiftea. (Menor).
+\end{itemize}
+
+\subsection{Matriz}
+
 
 \appendix
 \chapter{Practicas}
